@@ -1,3 +1,4 @@
+import os
 import replicate
 import streamlit as st
 import requests
@@ -8,6 +9,16 @@ from streamlit_image_select import image_select
 import hugging_face_api
 import io
 from PIL import Image
+
+from openai import OpenAI
+
+from dotenv import load_dotenv
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+API_URL = "https://api-inference.huggingface.co/models/cagliostrolab/animagine-xl-3.1"
+headers = {"Authorization": HUGGINGFACE_API_KEY}
+
 
 # UI configurations
 st.set_page_config(page_title="Replicate Image Generator",
@@ -45,6 +56,31 @@ def configure_sidebar() -> None:
 
         return submitted, prompt, negative_prompt
 
+def enhance_prompt(prompt):
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    quality_prompt= "masterpiece, best quality, very aesthetic, absurdres" 
+    image_gen_model_format = f"""{quality_prompt}, <number of character><character gender>, <character name>, <series name>, <enhance user query with  keyword (separated by comma) in reference to series>"""
+    neg_promt=  "nsfw, lowres, (bad), text, error, fewer, extra, missing, worst quality, jpeg artifacts, low quality, watermark, unfinished, displeasing, oldest, early, chromatic aberration, signature, extra digits, artistic error, username, scan, [abstract]"
+    completion = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            # {"role": "system", "content": "You are a ANIME expert, skilled in designing prompt for image generation using the user query convert the query in bew format, if the required information about anime is not given the query use your knowledge."},
+            {"role": "user", "content": f"""You are a ANIME expert, skilled in designing prompt for image generation mode. Using the user query enclosed in ## fill the "<>" in the format given in backticks. If the required information about anime is not given the query use your knowledge to complete it.
+            
+            #{prompt}#
+            
+            ```{image_gen_model_format}```
+            
+            """}
+    ]
+    )
+    enhanced_prompt = completion.choices[0].message.content
+    enhanced_prompt =enhanced_prompt.replace("```","")
+    print(enhanced_prompt)
+    return enhanced_prompt, neg_promt
+    # pass
+
+
 
 def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
     """Main page layout and logic for generating images.
@@ -73,8 +109,20 @@ def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
                     # Calling the replicate API to get the image
                     with generated_images_placeholder.container():
                         all_images = []  # List to store all generated images
-                        output = hugging_face_api.query(prompt)
-                        image = Image.open(io.BytesIO(output))
+                        prompt, negative_prompt = enhance_prompt(prompt)
+                        
+                        def query(payload):
+                            response = requests.post(API_URL, headers=headers, json=payload)
+                            return response.content
+                        image_bytes = query({
+                            "inputs": prompt,
+                            "negative_prompt":negative_prompt,
+                            
+                        })
+                        if len(image_bytes)<1000:
+                            print(image_bytes)
+                        
+                        image = Image.open(io.BytesIO(image_bytes))
                         if image:
                             st.toast(
                                 'Your image has been generated!', icon='😍')
