@@ -7,6 +7,8 @@ from utils import icon
 from streamlit_image_select import image_select
 import hugging_face_api
 import io
+import cv2
+import numpy as np
 from PIL import Image
 
 # UI configurations
@@ -21,6 +23,64 @@ st.markdown("# :rainbow[Text-to-Image Artistry Studio]")
 # Placeholders for images and gallery
 generated_images_placeholder = st.empty()
 gallery_placeholder = st.empty()
+
+def clearBg(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    mask = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY)[1]
+    mask = 255 - mask
+
+    kernel = np.ones((3,3), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    mask = cv2.GaussianBlur(mask, (0,0), sigmaX=2, sigmaY=2, borderType = cv2.BORDER_DEFAULT)
+    mask = (2*(mask.astype(np.float32))-255.0).clip(0,255).astype(np.uint8)
+
+    result = img.copy()
+    result = cv2.cvtColor(result, cv2.COLOR_BGR2BGRA)
+    result[:, :, 3] = mask
+    return result
+
+def printOnTshirt(image):
+    tShirts = [cv2.imread('images/white.jpg'),cv2.imread('images/black.png')]
+    prints  = []
+    for img in tShirts:
+        y,x,z=img.shape
+
+        #size of print
+        printX = 375
+        printY = 400
+
+        #resize print
+        image=cv2.resize(image,(printX,printY))
+
+        #Coordinates in tshirt
+        yA = int(y/2-(printY/2) + (0.05*y))
+        yB = int(y/2+(printY/2) + (0.05*y))
+        xA = int(x/2-(printX/2))
+        xB = int(x/2+(printX/2))
+
+        #add alpha channel
+        alpha1 = np.ones((y,x))*np.float32(255)
+        alpha2 = np.ones((printY,printX))*np.float32(255)
+
+        img   = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2RGBA)
+
+        img[:,:,3] = alpha1
+        image[:,:,3] = alpha2
+
+        mode =1
+        if (mode ==0):
+            img   = img[:,:,:]*np.float32(1/255)
+            image = image[:,:,:]*np.float32(1/255)
+            #print(img1[:,:,1])
+            img[yA:yB,xA:xB,:] = img[yA:yB,xA:xB,:]*image[:,:,:]
+            img = img[:,:,:]*np.float32(255)
+        else:
+            al =0.1
+            img[yA:yB,xA:xB,:] = np.uint8(img[yA:yB,xA:xB,:]*al + image[:,:,:]*(1-al))
+        prints.append(img)
+    return prints
 
 
 def configure_sidebar() -> None:
