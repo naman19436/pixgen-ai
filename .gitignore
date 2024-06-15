@@ -162,3 +162,7 @@ cython_debug/
 
 utils/seg.py
 .streamlit/secrets.toml
+
+
+#MacOS shit
+.DS_Store
