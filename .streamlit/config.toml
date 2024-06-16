@@ -1,3 +1,4 @@
 [theme]
 base="light"
-font="monospace"
+font="sans serif"
+backgroundColor="#202021"
