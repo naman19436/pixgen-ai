@@ -4,3 +4,5 @@ requests
 streamlit-image-select
 openai
 python-dotenv
+streamlit-carousel
+opencv-python
