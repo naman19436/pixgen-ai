@@ -17,21 +17,17 @@ from openai import OpenAI
 from dotenv import load_dotenv
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
-API_URL = "https://api-inference.huggingface.co/models/cagliostrolab/animagine-xl-3.1"
-headers = {"Authorization": HUGGINGFACE_API_KEY}
+
 
 
 from openai import OpenAI
 
 from dotenv import load_dotenv
 load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+HUGGINGFACE_API_KEY = st.secrets["HUGGINGFACE_API_KEY"]
 API_URL = "https://api-inference.huggingface.co/models/cagliostrolab/animagine-xl-3.1"
 headers = {"Authorization": HUGGINGFACE_API_KEY}
-
 
 # UI configurations
 st.set_page_config(page_title="ReAnime",
