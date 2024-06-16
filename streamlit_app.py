@@ -30,11 +30,11 @@ API_URL = "https://api-inference.huggingface.co/models/cagliostrolab/animagine-x
 headers = {"Authorization": HUGGINGFACE_API_KEY}
 
 # UI configurations
-st.set_page_config(page_title="ReAnime",
+st.set_page_config(page_title="Anikai",
                    page_icon=":bridge_at_night:",
                    layout="wide")
 # icon.show_icon(":foggy:")
-st.markdown("<h1 style='text-align: center; font-size: 100px; color: red;'>REANIME</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; font-size: 100px; color: red;'>ANIKAI</h1>", unsafe_allow_html=True)
 
 
 def clearBg(img):
