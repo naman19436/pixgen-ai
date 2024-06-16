@@ -6,3 +6,5 @@ openai
 python-dotenv
 streamlit-carousel
 opencv-python
+screeninfo
+streamlit-carousel 
