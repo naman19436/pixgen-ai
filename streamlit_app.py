@@ -4,9 +4,9 @@ import streamlit as st
 import requests
 import zipfile
 import io
-# from utils import icon
+from utils import icon
 from streamlit_image_select import image_select
-from streamlit_carousel import carousel
+# from streamlit_carousel import carousel
 import hugging_face_api
 import io
 import cv2
@@ -15,26 +15,31 @@ import numpy as np
 from PIL import Image
 from openai import OpenAI
 from dotenv import load_dotenv
+from screeninfo import get_monitors
 load_dotenv()
 
-
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+API_URL = "https://api-inference.huggingface.co/models/cagliostrolab/animagine-xl-3.1"
+headers = {"Authorization": HUGGINGFACE_API_KEY}
 
 
 from openai import OpenAI
 
 from dotenv import load_dotenv
 load_dotenv()
-OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-HUGGINGFACE_API_KEY = st.secrets["HUGGINGFACE_API_KEY"]
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 API_URL = "https://api-inference.huggingface.co/models/cagliostrolab/animagine-xl-3.1"
 headers = {"Authorization": HUGGINGFACE_API_KEY}
 
+
 # UI configurations
-st.set_page_config(page_title="Anikai",
+st.set_page_config(page_title="AniKai",
                    page_icon=":bridge_at_night:",
                    layout="wide")
 # icon.show_icon(":foggy:")
-st.markdown("<h1 style='text-align: center; font-size: 100px; color: red;'>ANIKAI</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; font-size: 100px; color: red;'>AniKai</h1></h1>", unsafe_allow_html=True)
 
 
 def clearBg(img):
@@ -114,8 +119,8 @@ def configure_searchbar() -> None:
         with col2:
             prompt = st.text_input(
                     "Start typing, Shakespeare ✍🏾",
-                    value="Start typing, Shakespeare ✍🏾",
-                    placeholder="Start typing, Shakespeare ✍🏾",
+                    value="",
+                    placeholder="Re-imagine your favorite Anime",
                     label_visibility='collapsed'
                 )
         col1, col2,col3 = st.columns([3,1,3])
@@ -142,11 +147,10 @@ def configure_searchbar() -> None:
 def enhance_prompt(prompt):
     client = OpenAI(api_key=OPENAI_API_KEY)
     quality_prompt= "masterpiece" #, best quality, very aesthetic, absurdres" 
-    image_gen_model_format = f"""{quality_prompt}, <number of character><character gender>, <character name>, <series name>, <enhance user query with  keyword (separated by comma) in reference to series>"""
+    image_gen_model_format = f"""{quality_prompt}, <number of character><character gender>, <character name>, <series name>, <rest of the user query>"""
     neg_promt=  "nsfw, lowres, (bad), text, error, fewer, extra, missing, worst quality, jpeg artifacts, low quality, watermark, unfinished, displeasing, oldest, early, chromatic aberration, signature, extra digits, artistic error, username, scan, [abstract]"
-    completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
+    
+    messages = [
             # {"role": "system", "content": "You are a ANIME expert, skilled in designing prompt for image generation using the user query convert the query in bew format, if the required information about anime is not given the query use your knowledge."},
             {"role": "user", "content": f"""You are a ANIME expert, skilled in designing prompt for image generation mode. Using the user query enclosed in ## fill the "<>" in the format given in backticks. If the required information about anime is not given the query use your knowledge to complete it.
             
@@ -154,11 +158,26 @@ def enhance_prompt(prompt):
             
             ```{image_gen_model_format}```
             
-            """}
-    ]
+            You MUST give numeric value(like 1,2,3) for <character number> and ONLY choose <character gender> from boy or girl
+            """
+
+            }
+        ]
+      
+    messages = [
+            # {"role": "system", "content": "You are a ANIME expert, skilled in designing prompt for image generation using the user query convert the query in bew format, if the required information about anime is not given the query use your knowledge."},
+            {"role": "user", "content": f""" description for gojou satoru is "1boy, male focus, gojou satoru, jujutsu kaisen, black jacket, blindfold lift, blue eyes, glowing, glowing eyes, high collar, jacket, jujutsu tech uniform, solo, grin, white hair"
+give similar for {prompt}. ONLY give description and enclosed it in three backticks."""
+            }
+        ]
+    
+    completion = client.chat.completions.create(
+        # model="gpt-3.5-turbo", #"gpt-4o",
+        model="gpt-4o",
+        messages=messages
     )
     enhanced_prompt = completion.choices[0].message.content
-    enhanced_prompt =enhanced_prompt.replace("```","")
+    enhanced_prompt =enhanced_prompt.replace("`","")
     print(enhanced_prompt)
     return enhanced_prompt, neg_promt
     # pass
@@ -190,7 +209,7 @@ def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
         negative_prompt (str): Text prompt for elements to avoid in the image.
     """
     if submitted:
-        with st.status(':white[👩🏾‍🍳 Whipping up your words into art...]', expanded=False) as status:
+        with st.status(':gray[👩🏾‍🍳 Whipping up your words into art...]', expanded=False) as status:
             try:
                 # Only call the API if the "Submit" button was pressed
                 if submitted:
@@ -230,24 +249,29 @@ def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
                             ]
                         if image:
                             st.toast(
-                                'Your image has been generated!', icon='😍')
+                                ':gray[Your image has been generated!]', icon='😍')
                             # Save generated image to session state
                             st.session_state.generated_image = image
 
                             # Displaying the image
                             col1, col2= st.columns([1,1])
+                            for i in get_monitors():
+                                if i.is_primary: 
+                                    width = int(i.width*0.4)
+                                    
                             with col1:
-                                st.image(all_images[0])
+                                st.image(all_images[0],width=width, use_column_width = "always")
                             with col2:
-                                # with st.container():
-                                #     st.image(all_images[1],width=500)
-                                # with st.container():
-                                #     st.image(all_images[2],width=500)
-                                carousel(items=test_items, width = 0.6)
+                                with st.container():
+                                    st.image(all_images[1],width=int(width*0.6))
+                                with st.container():
+                                    st.image(all_images[2],width=int(width*0.6))
+                                # carousel(items=test_items, width = 0.6)
+                            
                                 
                         st.session_state.all_images = all_images
 
-                status.update(label="✅ Images generated!",
+                status.update(label="",
                               state="complete", expanded=False)
             except Exception as e:
                 print(e)
@@ -320,6 +344,7 @@ def main():
     with gap1.container():
         st.text("")
     with gap2.container():
+        st.text("")
         st.text("")
 
     # test_items = [
