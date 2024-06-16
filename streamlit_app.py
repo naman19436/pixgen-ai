@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image
 from openai import OpenAI
 from dotenv import load_dotenv
-from screeninfo import get_monitors
+# from screeninfo import get_monitors
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -255,17 +255,17 @@ def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
 
                             # Displaying the image
                             col1, col2= st.columns([1,1])
-                            for i in get_monitors():
-                                if i.is_primary: 
-                                    width = int(i.width*0.4)
-                                    
+                            # for i in get_monitors():
+                            #     if i.is_primary: 
+                            #         width = int(i.width*0.4)
+                            
                             with col1:
-                                st.image(all_images[0],width=width, use_column_width = "always")
+                                st.image(all_images[0],width=700, use_column_width = "always")
                             with col2:
                                 with st.container():
-                                    st.image(all_images[1],width=int(width*0.6))
+                                    st.image(all_images[1],width=500)
                                 with st.container():
-                                    st.image(all_images[2],width=int(width*0.6))
+                                    st.image(all_images[2],width=500)
                                 # carousel(items=test_items, width = 0.6)
                             
                                 
