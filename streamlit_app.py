@@ -6,9 +6,11 @@ import zipfile
 import io
 from utils import icon
 from streamlit_image_select import image_select
+from streamlit_carousel import carousel
 import hugging_face_api
 import io
 import cv2
+import base64
 import numpy as np
 from PIL import Image
 from openai import OpenAI
@@ -56,7 +58,7 @@ def clearBg(img):
     return result
 
 def printOnTshirt(image):
-    tShirts = [cv2.imread('images/white.jpg'),cv2.imread('images/black.png')]
+    tShirts = [cv2.cvtColor(cv2.imread('images/white.jpg'),cv2.COLOR_BGR2RGB),cv2.cvtColor(cv2.imread('images/black.png'),cv2.COLOR_BGR2RGB)]
     prints  = []
     for img in tShirts:
         y,x,z=img.shape
@@ -94,7 +96,7 @@ def printOnTshirt(image):
         else:
             al =0.1
             img[yA:yB,xA:xB,:] = np.uint8(img[yA:yB,xA:xB,:]*al + image[:,:,:]*(1-al))
-        prints.append(img)
+        prints.append(Image.fromarray(img))
     return prints
 
 
@@ -143,7 +145,7 @@ def configure_searchbar() -> None:
 
 def enhance_prompt(prompt):
     client = OpenAI(api_key=OPENAI_API_KEY)
-    quality_prompt= "masterpiece, best quality, very aesthetic, absurdres" 
+    quality_prompt= "masterpiece" #, best quality, very aesthetic, absurdres" 
     image_gen_model_format = f"""{quality_prompt}, <number of character><character gender>, <character name>, <series name>, <enhance user query with  keyword (separated by comma) in reference to series>"""
     neg_promt=  "nsfw, lowres, (bad), text, error, fewer, extra, missing, worst quality, jpeg artifacts, low quality, watermark, unfinished, displeasing, oldest, early, chromatic aberration, signature, extra digits, artistic error, username, scan, [abstract]"
     completion = client.chat.completions.create(
@@ -192,9 +194,7 @@ def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
         negative_prompt (str): Text prompt for elements to avoid in the image.
     """
     if submitted:
-        with st.status(':white[👩🏾‍🍳 Whipping up your words into art...]', expanded=True) as status:
-            st.write(":white[⚙️ Model initiated]")
-            st.write(":white[🙆‍♀️ Stand up and strecth in the meantime]")
+        with st.status(':white[👩🏾‍🍳 Whipping up your words into art...]', expanded=False) as status:
             try:
                 # Only call the API if the "Submit" button was pressed
                 if submitted:
@@ -213,8 +213,25 @@ def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
                         })
                         if len(image_bytes)<1000:
                             print(image_bytes)
-                        
-                        image = Image.open(io.BytesIO(image_bytes))
+                        image_art = Image.open(io.BytesIO(image_bytes))
+                        image = np.array(image_art)
+                        image_white, image_black = printOnTshirt(image)
+                        image_white.save("gallery/white.png")
+                        image_black.save("gallery/black.png")
+                        all_images  = [image_art, image_white, image_black]
+                        image = all_images[0]
+                        test_items = [
+                            dict(
+                                title="",
+                                text="",
+                                img="https://github.com/naman19436/pixgen-ai/blob/main/gallery/black.png?raw=true",
+                            ),
+                            dict(
+                                title="",
+                                text="",
+                                img="https://github.com/naman19436/pixgen-ai/blob/main/gallery/white.png?raw=true",
+                            ),
+                            ]
                         if image:
                             st.toast(
                                 'Your image has been generated!', icon='😍')
@@ -222,8 +239,16 @@ def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
                             st.session_state.generated_image = image
 
                             # Displaying the image
-                            with st.container():
-                                st.image(image, caption="Generated Image 🎈")
+                            col1, col2= st.columns([1,1])
+                            with col1:
+                                st.image(all_images[0])
+                            with col2:
+                                # with st.container():
+                                #     st.image(all_images[1],width=500)
+                                # with st.container():
+                                #     st.image(all_images[2],width=500)
+                                carousel(items=test_items, width = 0.6)
+                                
                         st.session_state.all_images = all_images
 
                 status.update(label="✅ Images generated!",
@@ -238,14 +263,40 @@ def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
 
     # Gallery display for inspo
     with gallery_placeholder.container():
-        img = image_select(
-            label="",
-            images=[
-                "gallery/farmer_sunset.png", "gallery/astro_on_unicorn.png",
-                "gallery/friends.png", "gallery/wizard.png", "gallery/puppy.png",
-            ],
-            use_container_width=True
-        )
+        col1, col2, col3, col4 = st.columns([1,1,1,1])
+        with col1:
+            st.image("gallery/sample1.png")
+        with col2:
+            st.image("gallery/sample2.jpg")
+        with col3:
+            st.image("gallery/sample4.png")
+        with col4:
+            st.image("gallery/sample3.png")
+        # img = image_select(
+        #     label="",
+        #     images=[
+        #         "gallery/sample1.png", "gallery/sample2.jpg",
+        #         "gallery/sample12.png", "gallery/sample2W.png",
+        #     ],
+        #     use_container_width=True,
+        # )
+        # image = Image.open("C:/Users/Ishan/Desktop/PixelParadise/pixgen-ai/gallery/farmer_sunset.png")
+        # bytes = image.tobytes()
+        # mystr = base64.b64encode(bytes)
+        # carousel_items = [
+        #                     dict(
+        #                         title="Slide 1",
+        #                         text="White Tshirt",
+        #                         img="https://github.com/naman19436/pixgen-ai/blob/main/gallery/cheetah.png?raw=true"
+        #                     ),
+        #                     dict(
+        #                         title="Slide 2",
+        #                         text="Black Tshirt",
+        #                         img = "../../../../../../../../../C:/Users/Ishan/Desktop/PixelParadise/pixgen-ai/gallery/farmer_sunset.png"
+        #                     ),
+        #                 ]
+        # carousel(items=carousel_items, width=0.5)
+
 
         # col1, col2 = st.columns([1,1])
         # with col1:
@@ -274,6 +325,29 @@ def main():
         st.text("")
     with gap2.container():
         st.text("")
+
+    # test_items = [
+    #     dict(
+    #         title="Slide 1",
+    #         text="A tree in the savannah",
+    #         img=r"C:/Users/Ishan/Desktop/PixelParadise/pixgen-ai/gallery/farmer_sunset.png",
+    #         link="https://discuss.streamlit.io/t/new-component-react-bootstrap-carousel/46819"
+    #     ),
+    #     dict(
+    #         title="Slide 2",
+    #         text="A wooden bridge in a forest in Autumn",
+    #         img="https://img.freepik.com/free-photo/beautiful-wooden-pathway-going-breathtaking-colorful-trees-forest_181624-5840.jpg?w=1380&t=st=1688825780~exp=1688826380~hmac=dbaa75d8743e501f20f0e820fa77f9e377ec5d558d06635bd3f1f08443bdb2c1",
+    #         link="https://github.com/thomasbs17/streamlit-contributions/tree/master/bootstrap_carousel"
+    #     ),
+    #     dict(
+    #         title="Slide 3",
+    #         text="A distant mountain chain preceded by a sea",
+    #         img="https://img.freepik.com/free-photo/aerial-beautiful-shot-seashore-with-hills-background-sunset_181624-24143.jpg?w=1380&t=st=1688825798~exp=1688826398~hmac=f623f88d5ece83600dac7e6af29a0230d06619f7305745db387481a4bb5874a0",
+    #         link="https://github.com/thomasbs17/streamlit-contributions/tree/master"
+    #     ),
+    #     ]
+
+    # carousel(items=test_items, width=1)
     
     with form_placeholder.container():
         submitted, prompt = configure_searchbar()
