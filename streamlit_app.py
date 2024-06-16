@@ -4,7 +4,7 @@ import streamlit as st
 import requests
 import zipfile
 import io
-from utils import icon
+# from utils import icon
 from streamlit_image_select import image_select
 from streamlit_carousel import carousel
 import hugging_face_api
