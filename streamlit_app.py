@@ -21,6 +21,16 @@ API_URL = "https://api-inference.huggingface.co/models/cagliostrolab/animagine-x
 headers = {"Authorization": HUGGINGFACE_API_KEY}
 
 
+from openai import OpenAI
+
+from dotenv import load_dotenv
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+API_URL = "https://api-inference.huggingface.co/models/cagliostrolab/animagine-xl-3.1"
+headers = {"Authorization": HUGGINGFACE_API_KEY}
+
+
 # UI configurations
 st.set_page_config(page_title="ReAnime",
                    page_icon=":bridge_at_night:",
@@ -163,6 +173,7 @@ generated_images_placeholder = st.empty()
 gap2 = st.empty()
 gallery_placeholder = st.empty()
 
+
 def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
     """Main page layout and logic for generating images.
 
@@ -190,8 +201,20 @@ def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
                     # Calling the replicate API to get the image
                     with generated_images_placeholder.container():
                         all_images = []  # List to store all generated images
-                        output = hugging_face_api.query(prompt)
-                        image = Image.open(io.BytesIO(output))
+                        prompt, negative_prompt = enhance_prompt(prompt)
+                        
+                        def query(payload):
+                            response = requests.post(API_URL, headers=headers, json=payload)
+                            return response.content
+                        image_bytes = query({
+                            "inputs": prompt,
+                            "negative_prompt":negative_prompt,
+                            
+                        })
+                        if len(image_bytes)<1000:
+                            print(image_bytes)
+                        
+                        image = Image.open(io.BytesIO(image_bytes))
                         if image:
                             st.toast(
                                 'Your image has been generated!', icon='😍')

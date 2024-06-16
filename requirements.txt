@@ -2,3 +2,5 @@ replicate
 streamlit==1.30.0
 requests
 streamlit-image-select
+openai
+python-dotenv
