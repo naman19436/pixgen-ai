@@ -148,7 +148,7 @@ def enhance_prompt(prompt):
     client = OpenAI(api_key=OPENAI_API_KEY)
     quality_prompt= "masterpiece" #, best quality, very aesthetic, absurdres" 
     image_gen_model_format = f"""{quality_prompt}, <number of character><character gender>, <character name>, <series name>, <rest of the user query>"""
-    neg_promt=  "nsfw, lowres, (bad), text, error, fewer, extra, missing, worst quality, jpeg artifacts, low quality, watermark, unfinished, displeasing, oldest, early, chromatic aberration, signature, extra digits, artistic error, username, scan, [abstract]"
+    neg_promt=  "artistic error, nsfw, lowres, (bad), text, error, fewer, extra, missing, worst quality, jpeg artifacts, low quality, watermark, unfinished, displeasing, oldest, early, chromatic aberration, signature, extra digits,  username, scan, [abstract]"
     
     messages = [
             # {"role": "system", "content": "You are a ANIME expert, skilled in designing prompt for image generation using the user query convert the query in bew format, if the required information about anime is not given the query use your knowledge."},
@@ -263,9 +263,9 @@ def main_page(submitted: bool, prompt: str, negative_prompt: str) -> None:
                                 st.image(all_images[0],width=700, use_column_width = "always")
                             with col2:
                                 with st.container():
-                                    st.image(all_images[1],width=500)
+                                    st.image(all_images[1],width=400)
                                 with st.container():
-                                    st.image(all_images[2],width=500)
+                                    st.image(all_images[2],width=400)
                                 # carousel(items=test_items, width = 0.6)
                             
                                 
